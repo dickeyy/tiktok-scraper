@@ -2,21 +2,20 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const fs = require('fs');
 
+// connect to redis
+const { redis } = require('./redis');
+
+// set the base url
 let baseUrl = 'https://tiktok.com/@'
 
+// set initial counter
 let i = 0;
-
-let newArrayOfObjects = [];
 
 // get the followers-formatted.json file
 let json = fs.readFileSync('./data/followers-formatted.json', 'utf8');
 
 // parse the json into an array of objects
 let usernameData = JSON.parse(json);
-
-// get the username from the first object
-// username = usernameData[0].username;
-
 // start a timer
 console.time('timer');
 
@@ -40,14 +39,21 @@ async function getFollowers(userparam, paramurl) {
             // set the follower-count property of the object
             usernameData[i].followerCount = followers;
 
-            // push the object to the new array
-            newArrayOfObjects.push(usernameData[i]);
-
-            // increment the counter
-            i++;
-
-            // call the loop function again
-            loop();
+            // save the object to redis
+            redis.sAdd('tiktok', JSON.stringify(usernameData[i])).then(() => {
+                // increment the counter
+                i++;
+                // save the index to redis so we can pick up where we left off if the script stops
+                redis.set('index', i).then(() => {
+                    console.log(`${i+1}/${usernameData.length} - ${followers} saved`)
+                    // call the loop function again
+                    loop();
+                }).catch((error) => {
+                    console.log('Error saving index to redis');
+                })
+            }).catch((error) => {
+                console.log('Error saving ' + userparam + ' to redis');
+            })
         }
     
     }).catch((error) => {
@@ -63,8 +69,17 @@ async function getFollowers(userparam, paramurl) {
 
 // loop through the array of objects and get the followers for each one but only do one at a time, and wait for the previous one to finish
 async function loop() {
+    // get the index from redis
+    redis.get('index').then((index) => {
+        if (index == null) {
+            i = 0;
+        } else {
+            i = index;
+        }
+    }).catch((error) => {
+        console.log('Error getting index from redis');
+    })
     if (i < usernameData.length) {
-        console.log(`${i+1}/${usernameData.length}`)
 
         let username = usernameData[i].username;
         let url = baseUrl + username;
@@ -81,4 +96,9 @@ async function loop() {
     }
 }
 
-loop();
+redis.connect().then(() => {
+    console.log('Connected to redis');
+
+    // start the loop
+    loop();
+})
