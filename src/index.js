@@ -63,7 +63,12 @@ async function getFollowers(userparam, paramurl) {
             console.log('Error 404 for ' + userparam + ', skipping');
             i++;
             loop();
-        } 
+        } else {
+            console.log(`Error ${error.response.status} for ${userparam}, trying again in 2 seconds`);
+            setTimeout(() => {
+                getFollowers(userparam, paramurl)
+            }, 2000);
+        }
     })
 }
 
