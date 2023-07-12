@@ -88,6 +88,10 @@ async function loop() {
         await getFollowers(username, url);
 
     } else {
+
+        // we are done, save the json to a file
+        fs.writeFileSync('./data/followers.json', JSON.stringify(usernameData));
+
         console.log('\nDone');
 
         // stop the timer
