@@ -45,7 +45,7 @@ async function getFollowers(userparam, paramurl) {
                 i++;
                 // save the index to redis so we can pick up where we left off if the script stops
                 redis.set('index', i).then(() => {
-                    console.log(`${i+1}/${usernameData.length} - ${followers} saved`)
+                    console.log(`${i+1}/${usernameData.length} - ${followers} followers - ✅`)
                     // call the loop function again
                     loop();
                 }).catch((error) => {
