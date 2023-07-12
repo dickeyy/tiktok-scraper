@@ -15,7 +15,7 @@ let json = fs.readFileSync('./data/followers-formatted.json', 'utf8');
 let usernameData = JSON.parse(json);
 
 // get the username from the first object
-username = usernameData[0].username;
+// username = usernameData[0].username;
 
 // start a timer
 console.time('timer');
@@ -50,7 +50,15 @@ async function getFollowers(userparam, paramurl) {
             loop();
         }
     
-    });
+    }).catch((error) => {
+        // check if the error is a 404
+        if (error.response.status == 404) {
+            // skip this user
+            console.log('Error 404 for ' + userparam + ', skipping');
+            i++;
+            loop();
+        } 
+    })
 }
 
 // loop through the array of objects and get the followers for each one but only do one at a time, and wait for the previous one to finish
@@ -58,8 +66,8 @@ async function loop() {
     if (i < usernameData.length) {
         console.log(`${i+1}/${usernameData.length}`)
 
-        let url = baseUrl + usernameData[i].username;
         let username = usernameData[i].username;
+        let url = baseUrl + username;
 
         // call the function to get the followers once it is done, call the loop function again
         await getFollowers(username, url);
