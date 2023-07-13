@@ -94,9 +94,6 @@ async function loop() {
 
     } else {
 
-        // we are done, save the json to a file
-        fs.writeFileSync('./data/followers.json', JSON.stringify(usernameData));
-
         console.log('\nDone');
 
         // stop the timer
